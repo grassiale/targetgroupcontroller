@@ -57,7 +57,7 @@ func main() {
 	watchOptions := meta.ListOptions{}
 
 	for {
-		watch, err := client.Core().Endpoints(ns).Watch(watchOptions)
+		watch, err := client.CoreV1().Endpoints(ns).Watch(watchOptions)
 		if err != nil {
 			log.Fatal("Opening watch failed,", err)
 		}
