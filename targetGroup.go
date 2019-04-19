@@ -12,10 +12,6 @@ import (
 
 var targetGroupARN string
 
-var (
-	allZones = "all"
-)
-
 // Metrics
 var (
 	TargetGroupCommonLabels = []string{"targetGroupARN"}
@@ -108,7 +104,7 @@ func (tg *TargetGroup) Delta(ts TargetSet) (add []*elbv2.TargetDescription, remo
 			// Make a copy of T because we need a fresh new pointer
 			id := t
 			log.Println("Adding:", id)
-			add = append(add, &elbv2.TargetDescription{AvailabilityZone: &allZones,
+			add = append(add, &elbv2.TargetDescription{
 				Id:   &id,
 				Port: &tg.Port,
 			})
@@ -119,7 +115,7 @@ func (tg *TargetGroup) Delta(ts TargetSet) (add []*elbv2.TargetDescription, remo
 		if !ts[t] {
 			id := t
 			log.Println("Removing:", id)
-			remove = append(remove, &elbv2.TargetDescription{AvailabilityZone: &allZones,
+			remove = append(remove, &elbv2.TargetDescription{
 				Id:   &id,
 				Port: &tg.Port,
 			})

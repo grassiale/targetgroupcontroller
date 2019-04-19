@@ -46,7 +46,7 @@ func main() {
 	tg := TargetGroup{
 		ARN:        targetARN,
 		connection: elbSvc,
-		Port:       9000,
+		Port:       *port,
 	}
 	tg.UpdateKnown()
 
@@ -57,7 +57,7 @@ func main() {
 	watchOptions := meta.ListOptions{}
 
 	for {
-		watch, err := client.Core().Endpoints(ns).Watch(watchOptions)
+		watch, err := client.CoreV1().Endpoints(ns).Watch(watchOptions)
 		if err != nil {
 			log.Fatal("Opening watch failed,", err)
 		}
