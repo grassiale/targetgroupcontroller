@@ -46,7 +46,7 @@ func main() {
 	tg := TargetGroup{
 		ARN:        targetARN,
 		connection: elbSvc,
-		Port:       9000,
+		Port:       *port,
 	}
 	tg.UpdateKnown()
 
