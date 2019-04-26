@@ -53,10 +53,11 @@ func init() {
 
 // A Watcher observes changes to a kubernetes service (Endpoints) and updates a TargetGroup with the healthy hosts.
 type Watcher struct {
-	Service  string
-	port     int64
-	portName string
-	tg       *TargetGroup
+	Service    string
+	port       int64
+	portName   string
+	tg         *TargetGroup
+	isOtherVpc bool
 }
 
 func (w *Watcher) GetReadyIPsFromEndpoint(e *core.Endpoints) (ips TargetSet) {
@@ -86,7 +87,7 @@ func (w *Watcher) Watch(events <-chan watch.Event) {
 		if endpoint.Name == w.Service {
 			eventsSeen.With(w.MetricLabels()).Inc()
 			log.Println(endpoint.Name, w.GetReadyIPsFromEndpoint(endpoint))
-			w.tg.Update(w.GetReadyIPsFromEndpoint(endpoint))
+			w.tg.Update(w.GetReadyIPsFromEndpoint(endpoint), w.isOtherVpc)
 			lastWatchEvent.With(w.MetricLabels()).SetToCurrentTime()
 		}
 	}

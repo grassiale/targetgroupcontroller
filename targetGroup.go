@@ -3,14 +3,16 @@ package main
 import (
 	"log"
 
-	//	"github.com/aws/aws-sdk-go/aws"
-	// 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 var targetGroupARN string
+
+var (
+	allZones = "all"
+)
 
 // Metrics
 var (
@@ -94,20 +96,30 @@ type TargetGroup struct {
 	connection        *elbv2.ELBV2
 	ExistingTargetSet TargetSet
 	Port              int64
+	vpcId             *string
 }
 
 type TargetSet map[string]bool
 
-func (tg *TargetGroup) Delta(ts TargetSet) (add []*elbv2.TargetDescription, remove []*elbv2.TargetDescription) {
+func (tg *TargetGroup) Delta(ts TargetSet, isOtherVpc bool) (add []*elbv2.TargetDescription, remove []*elbv2.TargetDescription) {
+
 	for t := range ts {
 		if !tg.ExistingTargetSet[t] {
 			// Make a copy of T because we need a fresh new pointer
 			id := t
 			log.Println("Adding:", id)
-			add = append(add, &elbv2.TargetDescription{
-				Id:   &id,
-				Port: &tg.Port,
-			})
+			if isOtherVpc {
+				add = append(add, &elbv2.TargetDescription{
+					Id:               &id,
+					Port:             &tg.Port,
+					AvailabilityZone: &allZones,
+				})
+			} else {
+				add = append(add, &elbv2.TargetDescription{
+					Id:   &id,
+					Port: &tg.Port,
+				})
+			}
 		}
 	}
 
@@ -115,17 +127,25 @@ func (tg *TargetGroup) Delta(ts TargetSet) (add []*elbv2.TargetDescription, remo
 		if !ts[t] {
 			id := t
 			log.Println("Removing:", id)
-			remove = append(remove, &elbv2.TargetDescription{
-				Id:   &id,
-				Port: &tg.Port,
-			})
+			if isOtherVpc {
+				remove = append(remove, &elbv2.TargetDescription{
+					Id:               &id,
+					Port:             &tg.Port,
+					AvailabilityZone: &allZones,
+				})
+			} else {
+				remove = append(remove, &elbv2.TargetDescription{
+					Id:   &id,
+					Port: &tg.Port,
+				})
+			}
 		}
 	}
 	return
 }
 
-func (tg *TargetGroup) Update(ts TargetSet) {
-	new, old := tg.Delta(ts)
+func (tg *TargetGroup) Update(ts TargetSet, isOtherVpc bool) {
+	new, old := tg.Delta(ts, isOtherVpc)
 
 	log.Println("Beginning update of", tg.ARN)
 
