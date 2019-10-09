@@ -1,13 +1,15 @@
-FROM golang:stretch AS build
-
-RUN apt-get update && apt-get install -y ca-certificates && apt-get clean
-RUN adduser --disabled-password --gecos '' gopher
-ADD . /go/src/github.com/lifeonair/targetgroupcontroller
-RUN cd /go/src/github.com/lifeonair/targetgroupcontroller && go get && go build
+FROM golang:1.13.1-alpine3.10 as build
+RUN apk add -U --no-cache ca-certificates
+RUN addgroup -S appgroup && adduser -S gopher -G appgroup
+WORKDIR /app
+COPY go.mod ./
+RUN go mod download
+COPY ./*.go ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o targetgroupcontroller 
 
 FROM scratch
-COPY --from=build /etc/ssl/certs/ /etc/ssl/
-COPY --from=build /go/bin/targetgroupcontroller /bin/targetgroupcontroller
+COPY --from=build /app/targetgroupcontroller /
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /etc/passwd /etc/passwd
 USER gopher
-ENTRYPOINT ["/bin/targetgroupcontroller"]
+ENTRYPOINT ["/targetgroupcontroller"]
